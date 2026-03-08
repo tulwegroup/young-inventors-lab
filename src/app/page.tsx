@@ -117,15 +117,22 @@ export default function YoungInventorsLab() {
       
       if (data.error) {
         setError(data.error + (data.details ? `: ${data.details}` : ''));
-      } else {
+        setSettingUp(false);
+        return;
+      }
+      
+      // Fetch the newly created children
+      const inventorsRes = await fetch('/api/inventors');
+      const inventorsData = await inventorsRes.json();
+      
+      if (Array.isArray(inventorsData) && inventorsData.length > 0) {
+        // Success! We have children data
+        setChildren(inventorsData);
         setSetupComplete(true);
         setSetupNeeded(false);
-        // Fetch the newly created children
-        const inventorsRes = await fetch('/api/inventors');
-        const inventorsData = await inventorsRes.json();
-        if (Array.isArray(inventorsData)) {
-          setChildren(inventorsData);
-        }
+      } else {
+        // Setup reported success but no children - something went wrong
+        setError('Setup completed but no data was created. Please try again or check database connection.');
       }
     } catch (err) {
       console.error('Setup error:', err);
@@ -259,10 +266,25 @@ export default function YoungInventorsLab() {
 
           {/* Parent Dashboard */}
           <TabsContent value="parent" className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              {mesha && <ChildOverviewCard child={mesha} trackColor="blue" />}
-              {musiche && <ChildOverviewCard child={musiche} trackColor="pink" />}
-            </div>
+            {children.length === 0 ? (
+              <Card className="bg-white/80 backdrop-blur-sm border-orange-200">
+                <CardContent className="pt-6 text-center">
+                  <Database className="w-12 h-12 text-orange-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-700 mb-2">No Data Found</h3>
+                  <p className="text-gray-500 mb-4">The database appears to be empty. Click below to initialize.</p>
+                  <Button onClick={runSetup} disabled={settingUp} className="bg-orange-500 hover:bg-orange-600 text-white">
+                    {settingUp ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Rocket className="w-4 h-4 mr-2" />}
+                    {settingUp ? 'Initializing...' : 'Initialize Database'}
+                  </Button>
+                  {error && <p className="text-red-500 text-sm mt-4">{error}</p>}
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                <div className="grid md:grid-cols-2 gap-6">
+                  {mesha && <ChildOverviewCard child={mesha} trackColor="blue" />}
+                  {musiche && <ChildOverviewCard child={musiche} trackColor="pink" />}
+                </div>
 
             {/* Weekly Summary */}
             <Card className="bg-white/80 backdrop-blur-sm border-orange-200">
@@ -318,6 +340,8 @@ export default function YoungInventorsLab() {
                 </Button>
               </CardContent>
             </Card>
+              </>
+            )}
           </TabsContent>
 
           {/* Mesha Dashboard */}

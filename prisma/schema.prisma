@@ -1,0 +1,540 @@
+// Young Inventors Lab - Complete Database Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// ============================================
+// Users and Authentication
+// ============================================
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  fullName  String
+  password  String?  // Hashed password for parents
+  role      String   @default("parent") // parent, child
+  status    String   @default("active")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  childProfile     ChildProfile?
+  parentChildLinks ParentChildLink[] @relation("ParentLinks")
+  childParentLinks ParentChildLink[] @relation("ChildLinks")
+  mentorSessions   MentorSession[]
+  notifications    ParentNotification[]
+}
+
+model ChildProfile {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  displayName           String
+  age                   Int
+  learningTrack         String   // builder_inventor, creative_inventor
+  interests             String   // JSON array
+  preferredLearningStyle String?
+  currentWeek           Int      @default(1)
+  difficultyLevel       String   @default("beginner")
+  mentorPersona         String   @default("inventor_guide")
+  activeStatus          String   @default("active")
+  avatarUrl             String?
+  streakDays            Int      @default(0)
+  totalPoints           Int      @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  user                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  missionAssignments     ChildMissionAssignment[]
+  inventionJournals      InventionJournal[]
+  mentorSessions         MentorSession[]
+  skillProgress          ChildSkillProgress[]
+  performanceSnapshots   PerformanceSnapshot[]
+  weeklyReports          WeeklyReport[]
+  monthlyReports         MonthlyReport[]
+  collaborationSubmissions CollaborationSubmission[]
+  familyProjectMembers   FamilyProjectMember[]
+  mentorMemory           MentorMemory[]
+  childBadges            ChildBadge[]
+}
+
+model ParentChildLink {
+  id              String   @id @default(cuid())
+  parentUserId    String
+  childUserId     String
+  permissionLevel String   @default("full")
+  createdAt       DateTime @default(now())
+
+  // Relations
+  parentUser User @relation("ParentLinks", fields: [parentUserId], references: [id], onDelete: Cascade)
+  childUser  User @relation("ChildLinks", fields: [childUserId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// Curriculum and Missions
+// ============================================
+
+model Curriculum {
+  id          String   @id @default(cuid())
+  title       String
+  trackType   String
+  description String
+  totalWeeks  Int
+  version     String   @default("1.0")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  phases   CurriculumPhase[]
+  missions WeeklyMission[]
+}
+
+model CurriculumPhase {
+  id               String   @id @default(cuid())
+  curriculumId     String
+  phaseNumber      Int
+  phaseTitle       String
+  phaseDescription String
+  weekStart        Int
+  weekEnd          Int
+  goals            String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  curriculum Curriculum     @relation(fields: [curriculumId], references: [id], onDelete: Cascade)
+  missions   WeeklyMission[]
+}
+
+model WeeklyMission {
+  id                    String   @id @default(cuid())
+  curriculumId          String
+  phaseId               String
+  weekNumber            Int
+  missionTitle          String
+  missionType           String
+  missionSummary        String
+  coreObjective         String
+  estimatedHours        Float    @default(4.0)
+  difficultyTier        String   @default("beginner")
+  entrepreneurshipFocus String?
+  ipFocus               String?
+  collaborationPossible Boolean  @default(false)
+  buildMission          String?
+  inventorChallenge     String?
+  entrepreneurQuestion  String?
+  presentationMoment    String?
+  reflectionPrompt      String?
+  creativeMission       String?
+  inventorGame          String?
+  storyChallenge        String?
+  showcaseMoment        String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  curriculum Curriculum         @relation(fields: [curriculumId], references: [id], onDelete: Cascade)
+  phase      CurriculumPhase    @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  steps      MissionStep[]
+  assignments ChildMissionAssignment[]
+  entrepreneurshipPrompts EntrepreneurshipPrompt[]
+}
+
+model MissionStep {
+  id              String   @id @default(cuid())
+  weeklyMissionId String
+  stepOrder       Int
+  stepTitle       String
+  stepDescription String
+  stepType        String
+  requiredFlag    Boolean  @default(true)
+  hints           String?
+  successCriteria String?
+  createdAt       DateTime @default(now())
+
+  weeklyMission WeeklyMission @relation(fields: [weeklyMissionId], references: [id], onDelete: Cascade)
+}
+
+model ChildMissionAssignment {
+  id                   String   @id @default(cuid())
+  childProfileId       String
+  weeklyMissionId      String
+  assignedDate         DateTime @default(now())
+  dueDate              DateTime?
+  status               String   @default("assigned")
+  completionPercentage Float    @default(0)
+  mentorNotes          String?
+  adaptationReason     String?
+  startedAt            DateTime?
+  completedAt          DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  childProfile  ChildProfile      @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
+  weeklyMission WeeklyMission     @relation(fields: [weeklyMissionId], references: [id], onDelete: Cascade)
+  submissions   MissionSubmission[]
+}
+
+model MissionSubmission {
+  id                       String   @id @default(cuid())
+  childMissionAssignmentId String
+  submissionType           String
+  textResponse             String?
+  fileUrl                  String?
+  screenshotUrl            String?
+  audioUrl                 String?
+  videoUrl                 String?
+  drawingUrl               String?
+  submittedAt              DateTime @default(now())
+  reviewedAt               DateTime?
+  mentorFeedback           String?
+  createdAt                DateTime @default(now())
+
+  childMissionAssignment ChildMissionAssignment @relation(fields: [childMissionAssignmentId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// Invention Journal
+// ============================================
+
+model InventionJournal {
+  id                   String   @id @default(cuid())
+  childProfileId       String
+  title                String
+  problemStatement     String
+  inventionDescription String
+  targetUser           String?
+  howItWorks           String?
+  noveltyClaim         String?
+  entrepreneurshipIdea String?
+  ipCategoryGuess      String?
+  patentPotentialScore Float    @default(0)
+  status               String   @default("idea")
+  weekNumber           Int?
+  featured             Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  childProfile ChildProfile        @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
+  artifacts    InventionArtifact[]
+  versions     InventionVersion[]
+  tags         InventionTag[]
+  ipReviews    InventionIPReview[]
+}
+
+model InventionArtifact {
+  id                 String   @id @default(cuid())
+  inventionJournalId String
+  artifactType       String
+  fileUrl            String
+  description        String?
+  uploadedAt         DateTime @default(now())
+
+  inventionJournal InventionJournal @relation(fields: [inventionJournalId], references: [id], onDelete: Cascade)
+}
+
+model InventionVersion {
+  id                 String   @id @default(cuid())
+  inventionJournalId String
+  versionNumber      Int
+  changeSummary      String
+  updatedDescription String?
+  createdAt          DateTime @default(now())
+
+  inventionJournal InventionJournal @relation(fields: [inventionJournalId], references: [id], onDelete: Cascade)
+}
+
+model InventionTag {
+  id                 String   @id @default(cuid())
+  inventionJournalId String
+  tagName            String
+
+  inventionJournal InventionJournal @relation(fields: [inventionJournalId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// IP and Entrepreneurship Learning
+// ============================================
+
+model IPLesson {
+  id            String   @id @default(cuid())
+  title         String
+  conceptType   String
+  lessonText    String
+  ageGroup      String
+  examplePrompt String?
+  weekNumber    Int?
+  createdAt     DateTime @default(now())
+}
+
+model EntrepreneurshipPrompt {
+  id             String   @id @default(cuid())
+  missionId      String?
+  promptText     String
+  promptCategory String
+  ageGroup       String
+  createdAt      DateTime @default(now())
+
+  mission WeeklyMission? @relation(fields: [missionId], references: [id], onDelete: Cascade)
+}
+
+model InventionIPReview {
+  id                       String   @id @default(cuid())
+  inventionJournalId       String
+  reviewSummary            String
+  possibleIPType           String?
+  originalityNotes         String?
+  documentationQualityScore Float   @default(0)
+  nextStepSuggestion       String?
+  generatedAt              DateTime @default(now())
+
+  inventionJournal InventionJournal @relation(fields: [inventionJournalId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// Mentor and Conversation System
+// ============================================
+
+model MentorSession {
+  id                       String   @id @default(cuid())
+  childProfileId           String
+  userId                   String?
+  currentMissionAssignmentId String?
+  mentorMode               String   @default("guide")
+  sessionStart             DateTime @default(now())
+  sessionEnd               DateTime?
+  summary                  String?
+  createdAt                DateTime @default(now())
+
+  childProfile ChildProfile    @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
+  user         User?           @relation(fields: [userId], references: [id])
+  messages     MentorMessage[]
+}
+
+model MentorMessage {
+  id                String   @id @default(cuid())
+  mentorSessionId   String
+  senderType        String
+  messageText       String
+  toolCallsJson     String?
+  sentimentLabel    String?
+  educationalIntent String?
+  createdAt         DateTime @default(now())
+
+  mentorSession MentorSession @relation(fields: [mentorSessionId], references: [id], onDelete: Cascade)
+}
+
+model MentorMemory {
+  id              String   @id @default(cuid())
+  childProfileId  String
+  memoryType      String
+  memoryKey       String
+  memoryValue     String
+  confidenceScore Float    @default(1.0)
+  source          String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  childProfile ChildProfile @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// Collaboration and Family Incubator
+// ============================================
+
+model FamilyProject {
+  id           String   @id @default(cuid())
+  title        String
+  description  String
+  projectTheme String?
+  status       String   @default("active")
+  startDate    DateTime @default(now())
+  endDate      DateTime?
+  createdBy    String?
+  monthTheme   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  members  FamilyProjectMember[]
+  missions CollaborationMission[]
+}
+
+model FamilyProjectMember {
+  id                  String   @id @default(cuid())
+  familyProjectId     String
+  childProfileId      String
+  roleInProject       String?
+  contributionSummary String?
+  createdAt           DateTime @default(now())
+
+  familyProject FamilyProject @relation(fields: [familyProjectId], references: [id], onDelete: Cascade)
+  childProfile  ChildProfile  @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
+}
+
+model CollaborationMission {
+  id                 String   @id @default(cuid())
+  familyProjectId    String
+  missionTitle       String
+  missionDescription String
+  objective          String
+  submissionType     String
+  dueDate            DateTime?
+  createdAt          DateTime @default(now())
+
+  familyProject FamilyProject @relation(fields: [familyProjectId], references: [id], onDelete: Cascade)
+  submissions   CollaborationSubmission[]
+}
+
+model CollaborationSubmission {
+  id                     String   @id @default(cuid())
+  collaborationMissionId String
+  childProfileId         String
+  submissionText         String?
+  fileUrl                String?
+  submittedAt            DateTime @default(now())
+  mentorFeedback         String?
+
+  collaborationMission CollaborationMission @relation(fields: [collaborationMissionId], references: [id], onDelete: Cascade)
+  childProfile         ChildProfile         @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// Progress Tracking and Analytics
+// ============================================
+
+model SkillTaxonomy {
+  id            String   @id @default(cuid())
+  skillName     String
+  skillCategory String
+  description   String
+  createdAt     DateTime @default(now())
+
+  childProgress ChildSkillProgress[]
+}
+
+model ChildSkillProgress {
+  id              String   @id @default(cuid())
+  childProfileId  String
+  skillId         String
+  currentLevel    Int      @default(1)
+  confidenceLevel Float    @default(0.5)
+  evidenceNote    String?
+  lastUpdated     DateTime @updatedAt
+
+  childProfile ChildProfile  @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
+  skill        SkillTaxonomy @relation(fields: [skillId], references: [id], onDelete: Cascade)
+}
+
+model PerformanceSnapshot {
+  id                    String   @id @default(cuid())
+  childProfileId        String
+  weekNumber            Int
+  creativityScore       Float    @default(0)
+  completionScore       Float    @default(0)
+  initiativeScore       Float    @default(0)
+  collaborationScore    Float    @default(0)
+  communicationScore    Float    @default(0)
+  entrepreneurshipScore Float    @default(0)
+  inventionScore        Float    @default(0)
+  mentorSummary         String?
+  createdAt             DateTime @default(now())
+
+  childProfile ChildProfile @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// Reporting and Notifications
+// ============================================
+
+model WeeklyReport {
+  id                        String   @id @default(cuid())
+  childProfileId            String
+  weekNumber                Int
+  reportText                String
+  highlights                String?
+  skillGrowthSummary        String?
+  concernFlags              String?
+  recommendedParentActions  String?
+  suggestedConversationTopics String?
+  generatedAt               DateTime @default(now())
+  deliveredAt               DateTime?
+  readAt                    DateTime?
+
+  childProfile ChildProfile @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
+}
+
+model MonthlyReport {
+  id                    String   @id @default(cuid())
+  childProfileId        String
+  monthNumber           Int
+  year                  Int
+  reportText            String
+  keyProjects           String?
+  inventionSummary      String?
+  confidenceSummary     String?
+  collaborationSummary  String?
+  growthRecommendations String?
+  showcaseWorthyWork    String?
+  generatedAt           DateTime @default(now())
+  deliveredAt           DateTime?
+  readAt                DateTime?
+
+  childProfile ChildProfile @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
+}
+
+model ParentNotification {
+  id               String   @id @default(cuid())
+  parentUserId     String
+  childProfileId   String?
+  notificationType String
+  title            String
+  bodyText         String
+  deliveryChannel  String   @default("dashboard")
+  status           String   @default("pending")
+  createdAt        DateTime @default(now())
+  deliveredAt      DateTime?
+  readAt           DateTime?
+
+  parentUser User @relation(fields: [parentUserId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// Badges and Achievements
+// ============================================
+
+model Badge {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  iconUrl     String?
+  category    String
+  pointsValue Int      @default(10)
+  createdAt   DateTime @default(now())
+
+  childBadges ChildBadge[]
+}
+
+model ChildBadge {
+  id             String   @id @default(cuid())
+  childProfileId String
+  badgeId        String
+  earnedAt       DateTime @default(now())
+  context        String?
+
+  childProfile ChildProfile @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
+  badge        Badge        @relation(fields: [badgeId], references: [id])
+}
+
+// ============================================
+// App State
+// ============================================
+
+model AppState {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}

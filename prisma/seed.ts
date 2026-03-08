@@ -165,6 +165,13 @@ const badges = [
 async function main() {
   console.log("Starting seed process...");
 
+  // Check if already seeded
+  const existingUsers = await prisma.user.count();
+  if (existingUsers > 0) {
+    console.log("Database already seeded. Skipping...");
+    return;
+  }
+
   // Create parent user
   console.log("Creating parent user...");
   const parent = await prisma.user.create({

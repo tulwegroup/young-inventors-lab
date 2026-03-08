@@ -1,8 +1,8 @@
 import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
-// SQL to create all tables
-const CREATE_TABLES_SQL = `
+// PostgreSQL SQL to create all tables
+const CREATE_TABLES_SQL_POSTGRES = `
 -- User table
 CREATE TABLE IF NOT EXISTS "User" (
   "id" TEXT NOT NULL,
@@ -203,7 +203,7 @@ async function ensureTablesExist() {
   console.log('Creating tables if they don\'t exist...');
   
   // Split SQL into individual statements and execute them
-  const statements = CREATE_TABLES_SQL
+  const statements = CREATE_TABLES_SQL_POSTGRES
     .split(';')
     .map(s => s.trim())
     .filter(s => s.length > 0);
@@ -229,8 +229,10 @@ export async function POST() {
   try {
     console.log('Starting database setup...');
 
-    // First, ensure tables exist
-    await ensureTablesExist();
+    // First, ensure tables exist (for PostgreSQL in production)
+    if (process.env.DATABASE_URL?.includes('postgresql')) {
+      await ensureTablesExist();
+    }
 
     // Check if already set up by counting users
     const existingUsers = await db.user.count().catch(() => 0);
@@ -484,8 +486,10 @@ export async function POST() {
 
 export async function GET() {
   try {
-    // Try to ensure tables exist first
-    await ensureTablesExist().catch(() => {});
+    // Try to ensure tables exist first (for PostgreSQL in production)
+    if (process.env.DATABASE_URL?.includes('postgresql')) {
+      await ensureTablesExist().catch(() => {});
+    }
     
     // Check if database is set up
     const userCount = await db.user.count().catch(() => 0);

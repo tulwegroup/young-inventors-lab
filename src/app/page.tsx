@@ -18,7 +18,7 @@ interface Child {
   displayName: string;
   age: number;
   learningTrack: string;
-  interests: string[];
+  interests: string; // JSON string from database
   currentWeek: number;
   totalPoints: number;
   streakDays: number;
@@ -55,6 +55,19 @@ interface ChildBadge {
     category: string;
     pointsValue: number;
   };
+}
+
+// Helper function to parse interests from JSON string
+function parseInterests(interests: string): string[] {
+  try {
+    if (typeof interests === 'string') {
+      const parsed = JSON.parse(interests);
+      return Array.isArray(parsed) ? parsed : [];
+    }
+    return Array.isArray(interests) ? interests : [];
+  } catch {
+    return [];
+  }
 }
 
 export default function YoungInventorsLab() {
@@ -394,7 +407,7 @@ function ChildOverviewCard({ child, trackColor }: { child: Child; trackColor: st
           )}
 
           <div className="flex flex-wrap gap-1">
-            {child.interests.map((interest, i) => (
+            {parseInterests(child.interests).map((interest, i) => (
               <Badge key={i} variant="outline" className="text-xs bg-orange-50">
                 {interest}
               </Badge>

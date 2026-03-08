@@ -362,6 +362,13 @@ function ChildOverviewCard({ child, trackColor }: { child: Child; trackColor: st
     pink: 'from-pink-500 to-purple-500',
   } as const;
 
+  // Female avatars for each child
+  const getAvatar = (name: string) => {
+    if (name === 'Mesha') return '👩‍💻'; // Girl with tech/builder theme
+    if (name === 'Musiche') return '👧‍🎨'; // Girl with creative theme
+    return '👧';
+  };
+
   const activeMission = child.missionAssignments.find(m => m.status !== 'completed');
 
   return (
@@ -375,8 +382,8 @@ function ChildOverviewCard({ child, trackColor }: { child: Child; trackColor: st
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className={`w-12 h-12 rounded-full bg-gradient-to-r ${colorClasses[trackColor as keyof typeof colorClasses]} flex items-center justify-center text-white text-xl font-bold`}>
-                {child.displayName.charAt(0)}
+              <div className={`w-12 h-12 rounded-full bg-gradient-to-r ${colorClasses[trackColor as keyof typeof colorClasses]} flex items-center justify-center text-2xl`}>
+                {getAvatar(child.displayName)}
               </div>
               <div>
                 <CardTitle>{child.displayName}</CardTitle>
@@ -436,13 +443,13 @@ function ChildDashboard({ child, trackType }: { child: Child; trackType: string 
       title: 'Builder-Inventor Track',
       description: 'Learn to build digital products and think like an inventor',
       color: 'blue',
-      icon: <Wrench className="w-6 h-6" />,
+      avatar: '👩‍💻', // Female tech/builder avatar
     },
     creative: {
       title: 'Creative Inventor Track',
       description: 'Develop creativity and invention thinking through play',
       color: 'pink',
-      icon: <Palette className="w-6 h-6" />,
+      avatar: '👧‍🎨', // Female creative/artist avatar
     },
   } as const;
 
@@ -458,8 +465,8 @@ function ChildDashboard({ child, trackType }: { child: Child; trackType: string 
       <Card className={`bg-gradient-to-r ${info.color === 'blue' ? 'from-blue-500 to-cyan-500' : 'from-pink-500 to-purple-500'} text-white border-0`}>
         <CardContent className="pt-6">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
-              {info.icon}
+            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center text-3xl">
+              {info.avatar}
             </div>
             <div>
               <h2 className="text-2xl font-bold">Hello, {child.displayName}! 👋</h2>

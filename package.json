@@ -5,7 +5,7 @@
   "description": "An interactive AI learning platform teaching children creativity, invention thinking, and entrepreneurship",
   "scripts": {
     "dev": "next dev -p 3000 --webpack",
-    "build": "prisma generate && prisma migrate deploy && next build",
+    "build": "prisma generate && prisma db push --accept-data-loss && next build",
     "start": "next start",
     "lint": "eslint .",
     "db:push": "prisma db push",

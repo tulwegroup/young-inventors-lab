@@ -5,8 +5,8 @@ export async function POST() {
   try {
     console.log('Starting database setup...');
 
-    // Check if already set up
-    const existingUsers = await db.user.count();
+    // Check if already set up by counting users
+    const existingUsers = await db.user.count().catch(() => 0);
     if (existingUsers > 0) {
       return NextResponse.json({ 
         message: 'Database already set up', 
@@ -224,5 +224,28 @@ export async function POST() {
       error: 'Setup failed', 
       details: error instanceof Error ? error.message : String(error)
     }, { status: 500 });
+  }
+}
+
+export async function GET() {
+  try {
+    // Check if database is set up
+    const userCount = await db.user.count().catch(() => 0);
+    const childCount = await db.childProfile.count().catch(() => 0);
+    const missionCount = await db.weeklyMission.count().catch(() => 0);
+    
+    return NextResponse.json({
+      initialized: userCount > 0,
+      stats: {
+        users: userCount,
+        children: childCount,
+        missions: missionCount,
+      }
+    });
+  } catch (error) {
+    return NextResponse.json({
+      initialized: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 }

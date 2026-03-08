@@ -92,11 +92,16 @@ export default function YoungInventorsLab() {
         setChildren(data);
         setSetupNeeded(false);
       } else {
+        // Auto-run setup if no children found
         setSetupNeeded(true);
+        // Automatically trigger setup
+        setTimeout(() => runSetup(), 500);
       }
     } catch (err) {
       console.error('Error checking setup:', err);
       setSetupNeeded(true);
+      // Automatically trigger setup on error
+      setTimeout(() => runSetup(), 500);
     } finally {
       setLoading(false);
     }
@@ -162,60 +167,60 @@ export default function YoungInventorsLab() {
     );
   }
 
-  if (setupNeeded) {
+  if (setupNeeded || settingUp) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 flex items-center justify-center p-4">
         <Card className="max-w-lg w-full bg-white/80 backdrop-blur-sm border-orange-200">
           <CardHeader className="text-center">
             <motion.div
               initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
+              animate={{ scale: 1, rotate: settingUp ? 360 : 0 }}
+              transition={{ duration: settingUp ? 1 : 0.5, repeat: settingUp ? Infinity : 0 }}
               className="w-20 h-20 bg-gradient-to-br from-orange-400 to-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg"
             >
-              <Rocket className="w-10 h-10 text-white" />
+              {settingUp ? (
+                <Loader2 className="w-10 h-10 text-white" />
+              ) : (
+                <Rocket className="w-10 h-10 text-white" />
+              )}
             </motion.div>
             <CardTitle className="text-3xl bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
               Young Inventors Lab
             </CardTitle>
             <CardDescription className="text-lg">
-              Let&apos;s set up your invention learning platform!
+              {settingUp ? 'Initializing your learning platform...' : 'Let\'s set up your invention learning platform!'}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
-              <h3 className="font-semibold text-orange-800 mb-2">Setup will create:</h3>
-              <ul className="text-sm text-orange-700 space-y-1">
-                <li>✨ Parent account</li>
-                <li>👧 Mesha (Age 10) - Builder-Inventor Track</li>
-                <li>👦 Musiche (Age 8) - Creative Inventor Track</li>
-                <li>📚 52-week curriculum for each child</li>
-                <li>🎮 First weekly missions</li>
-              </ul>
-            </div>
+            {settingUp ? (
+              <div className="bg-orange-50 rounded-lg p-4 border border-orange-200 text-center">
+                <p className="text-sm text-orange-700">Creating database tables and seeding initial data...</p>
+                <p className="text-xs text-orange-500 mt-2">This may take a few seconds</p>
+              </div>
+            ) : (
+              <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
+                <h3 className="font-semibold text-orange-800 mb-2">Setup will create:</h3>
+                <ul className="text-sm text-orange-700 space-y-1">
+                  <li>✨ Parent account</li>
+                  <li>👧 Mesha (Age 10) - Builder-Inventor Track</li>
+                  <li>👧 Musiche (Age 8) - Creative Inventor Track</li>
+                  <li>📚 52-week curriculum for each child</li>
+                  <li>🎮 First weekly missions</li>
+                </ul>
+              </div>
+            )}
 
             {error && (
               <div className="bg-red-50 rounded-lg p-4 border border-red-200">
                 <p className="text-sm text-red-700">{error}</p>
+                <Button
+                  onClick={runSetup}
+                  className="mt-3 w-full bg-red-500 hover:bg-red-600 text-white"
+                >
+                  Retry Setup
+                </Button>
               </div>
             )}
-
-            <Button
-              onClick={runSetup}
-              disabled={settingUp}
-              className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white py-6 text-lg"
-            >
-              {settingUp ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Setting Up...
-                </>
-              ) : (
-                <>
-                  <Database className="w-5 h-5 mr-2" />
-                  Initialize Database
-                </>
-              )}
-            </Button>
           </CardContent>
         </Card>
       </div>

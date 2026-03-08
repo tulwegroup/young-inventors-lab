@@ -26,11 +26,17 @@ export async function GET() {
       },
     });
 
-    // Return empty array if no children found
-    return NextResponse.json(children || []);
+    // Parse interests JSON string for each child
+    const childrenWithParsedInterests = children.map(child => ({
+      ...child,
+      interests: child.interests,
+    }));
+
+    return NextResponse.json(childrenWithParsedInterests || []);
   } catch (error) {
     console.error('Error fetching children:', error);
     // Return empty array on error so the frontend doesn't crash
+    // This handles the case where tables don't exist yet
     return NextResponse.json([]);
   }
 }

@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    // Get all child profiles with their users
+    // Get all child profiles with their users and assignments
     const children = await db.childProfile.findMany({
       include: {
         user: true,
@@ -26,13 +26,29 @@ export async function GET() {
       },
     });
 
-    // Parse interests JSON string for each child
-    const childrenWithParsedInterests = children.map(child => ({
-      ...child,
+    // Transform for frontend compatibility
+    const transformedChildren = children.map(child => ({
+      id: child.id,
+      userId: child.userId,
+      displayName: child.displayName,
+      age: child.age,
+      learningTrack: child.learningTrack,
       interests: child.interests,
+      currentWeek: child.currentWeek,
+      totalPoints: child.totalPoints,
+      streakDays: child.streakDays,
+      user: child.user,
+      missionAssignments: child.missionAssignments.map(a => ({
+        id: a.id,
+        status: a.status,
+        completionPercentage: a.completionPercentage,
+        weeklyMission: a.weeklyMission,
+      })),
+      inventionJournals: child.inventionJournals,
+      childBadges: child.childBadges,
     }));
 
-    return NextResponse.json(childrenWithParsedInterests || []);
+    return NextResponse.json(transformedChildren || []);
   } catch (error) {
     console.error('Error fetching children:', error);
     // Return empty array on error so the frontend doesn't crash

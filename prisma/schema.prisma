@@ -10,6 +10,8 @@ datasource db {
   directUrl = env("DIRECT_DATABASE_URL")
 }
 
+// Empty line fix for neon
+
 // ============================================
 // Users and Authentication
 // ============================================
